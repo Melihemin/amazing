@@ -79,7 +79,7 @@ def generate():
             return jsonify({
                 "prompt": user_prompt,
                 "response": generated_content,
-                "audio_file_url": f"http://localhost:5000/download/{os.path.basename(audio_file)}"
+                "audio_file_url": f"http://localhost:5000/download/{audio_file.split('/')[-1]}"
             })
         else:
             return jsonify({
@@ -100,4 +100,5 @@ def download_file(filename):
     )
 
 if __name__ == "__main__":
-    app.run(debug=True)
+    port = int(os.getenv("PORT", 80))  # Get the port from environment variables or default to 80
+    app.run(debug=True, port=port)
