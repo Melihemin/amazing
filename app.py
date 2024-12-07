@@ -79,7 +79,7 @@ def generate():
             return jsonify({
                 "prompt": user_prompt,
                 "response": generated_content,
-                "audio_file_url": f"http://localhost:5000/download/{audio_file.split('/')[-1]}"
+                "audio_file_url": f"http://localhost:5000/download/{os.path.basename(audio_file)}"
             })
         else:
             return jsonify({
