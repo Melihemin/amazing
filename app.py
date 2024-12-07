@@ -2,20 +2,20 @@ from flask import Flask, request, jsonify, send_file
 import requests
 import base64
 import os
-from google.generativeai import configure, GenerativeModel
+from google.generativeai import configure, ChatModel
 
 # Flask application
 app = Flask(__name__)
 
 # Configure Google Generative AI
-API_KEY = "AIzaSyAwQ5rXpvoF0W3iA0gfrjTD0tHFg8P3H-4"
+API_KEY = "YOUR_GOOGLE_API_KEY"  # Replace with your API key
 configure(api_key=API_KEY)
 TEXT_TO_SPEECH_URL = "https://texttospeech.googleapis.com/v1/text:synthesize"
 
 # Generate content using Google Generative AI
 def generate_content(prompt):
     """Generate content using Google Generative AI."""
-    model = GenerativeModel(model_name="gemini-1.5-flash")
+    model = ChatModel(model_name="gemini-1.5-flash")
     prompt2 = (
         "Merhaba! Sen bir tur rehberisin ve ben sizinle birlikte bu muazzam yerleri keşfetmek için buradayım. "
         "Amacın bize bu gezintiyi mümkün olan en keyifli ve öğretici şekilde sunmak. "
@@ -27,7 +27,7 @@ def generate_content(prompt):
         f"İşte sana yöneltilen mesaj bunu cevapla: {prompt}"
     )
 
-    response = model.generate_content(prompt2)
+    response = model.generate(prompt2)
     return response.text
 
 # Convert text to speech using Google Text-to-Speech API
