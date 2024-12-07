@@ -1,22 +1,35 @@
-from flask import Flask, request, jsonify, send_file
+from flask import Flask, request, jsonify
 import requests
 import base64
+from google.generativeai import configure, GenerativeModel
 import os
-from google.generativeai import configure, generate
 
 # Flask application
 app = Flask(__name__)
 
 # Configure Google Generative AI
-API_KEY = "YOUR_GOOGLE_API_KEY"  # Replace with your API key
+API_KEY = "AIzaSyAwQ5rXpvoF0W3iA0gfrjTD0tHFg8P3H-4"
 configure(api_key=API_KEY)
 TEXT_TO_SPEECH_URL = "https://texttospeech.googleapis.com/v1/text:synthesize"
 
 # Generate content using Google Generative AI
 def generate_content(prompt):
     """Generate content using Google Generative AI."""
-    response = generate(model="gemini-1.5-flash", prompt=prompt)
+    model = GenerativeModel(model_name="gemini-1.5-flash")
+    prompt2 = (
+        "Merhaba! Sen bir tur rehberisin ve ben sizinle birlikte bu muazzam yerleri keşfetmek için buradayım. "
+        "Amacın bize bu gezintiyi mümkün olan en keyifli ve öğretici şekilde sunmak. "
+        "Bizlere yerel kültür, tarih ve önemli mekanlar hakkında bilgi vermek, "
+        "her adımda bizi yönlendirmek ve sorularımıza yanıt vermek için buradasın. "
+        "İstersek gezilecek yerler hakkında daha fazla bilgi edinebilir veya her konuda sohbet edebiliriz. "
+        "Hedefin, bu gezinin unutulmaz ve eğlenceli olmasını sağlamak! "
+        "Kalin harfler ya da italik yazi kullanmadan duz yazi ile yaz. "
+        f"İşte sana yöneltilen mesaj bunu cevapla: {prompt}"
+    )
+
+    response = model.generate_content(prompt2)
     return response.text
+
 
 # Convert text to speech using Google Text-to-Speech API
 def text_to_speech(text):
@@ -35,13 +48,12 @@ def text_to_speech(text):
 
     response = requests.post(f"{TEXT_TO_SPEECH_URL}?key={API_KEY}", json=data)
     if response.status_code == 200:
-        # Save the audio content as a file
-        audio_file_path = "output.mp3"
-        with open(audio_file_path, "wb") as f:
-            f.write(base64.b64decode(response.json()["audioContent"]))
-        return audio_file_path
+        # Return the audio content as base64
+        audio_content = response.json()["audioContent"]
+        return audio_content
     else:
         raise Exception(f"API Error: {response.status_code}, {response.text}")
+
 
 @app.route("/generate", methods=["POST"])
 def generate():
@@ -58,35 +70,21 @@ def generate():
         generated_content = generate_content(user_prompt)
 
         # Convert to speech if requested
-        audio_file = None
+        audio_base64 = None
         if data.get("text_to_speech", False):
-            audio_file = text_to_speech(generated_content)
+            audio_base64 = text_to_speech(generated_content)
 
         # Response
-        if audio_file:
-            return jsonify({
-                "prompt": user_prompt,
-                "response": generated_content,
-                "audio_file_url": f"http://localhost:5000/download/{audio_file.split('/')[-1]}"
-            })
-        else:
-            return jsonify({
-                "prompt": user_prompt,
-                "response": generated_content
-            })
+        return jsonify({
+            "prompt": user_prompt,
+            "response": generated_content,
+            "audio_base64": audio_base64
+        })
 
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
-@app.route('/download/<filename>', methods=['GET'])
-def download_file(filename):
-    """Endpoint to allow downloading the audio file."""
-    return send_file(
-        filename,
-        as_attachment=True,
-        download_name=filename
-    )
 
 if __name__ == "__main__":
-    port = int(os.getenv("PORT", 80))  # Get the port from environment variables or default to 80
-    app.run(debug=True, port=port)
+    app.run(debug=True)
+----------
